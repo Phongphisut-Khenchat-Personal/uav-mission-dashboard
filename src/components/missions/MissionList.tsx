@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { MissionTable } from "@/components/missions/MissionTable";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
@@ -17,6 +17,8 @@ const missionStatuses: MissionStatus[] = [
   "completed",
   "failed",
 ];
+
+const PAGE_SIZE = 8;
 
 function isMissionStatus(value: string): value is MissionStatus {
   return missionStatuses.includes(value as MissionStatus);
@@ -44,6 +46,9 @@ export function MissionList() {
     return rawStatus.split(",").filter(isMissionStatus);
   }, [searchParams]);
 
+  const dateSortDirection =
+    searchParams.get("sort") === "asc" ? "asc" : "desc";
+
   useEffect(() => {
     async function loadMissions() {
       try {
@@ -68,6 +73,16 @@ export function MissionList() {
     void loadMissions();
   }, []);
 
+  const replaceParams = useCallback(
+    (mutate: (params: URLSearchParams) => void) => {
+      const params = new URLSearchParams(searchParams.toString());
+      mutate(params);
+      const query = params.toString();
+      router.replace(query ? `${pathname}?${query}` : pathname);
+    },
+    [pathname, router, searchParams],
+  );
+
   useEffect(() => {
     const nextQuery = debouncedSearch.trim() ? debouncedSearch : "";
     const currentQuery = searchParams.get("q") ?? "";
@@ -76,32 +91,48 @@ export function MissionList() {
       return;
     }
 
-    const params = new URLSearchParams(searchParams.toString());
+    replaceParams((params) => {
+      if (nextQuery) {
+        params.set("q", nextQuery);
+      } else {
+        params.delete("q");
+      }
 
-    if (nextQuery) {
-      params.set("q", nextQuery);
-    } else {
-      params.delete("q");
-    }
-
-    const query = params.toString();
-    router.replace(query ? `${pathname}?${query}` : pathname);
-  }, [debouncedSearch, pathname, router, searchParams]);
+      params.delete("page");
+    });
+  }, [debouncedSearch, replaceParams, searchParams]);
 
   function toggleStatus(status: MissionStatus) {
-    const params = new URLSearchParams(searchParams.toString());
-    const nextStatuses = selectedStatuses.includes(status)
-      ? selectedStatuses.filter((value) => value !== status)
-      : [...selectedStatuses, status];
+    replaceParams((params) => {
+      const nextStatuses = selectedStatuses.includes(status)
+        ? selectedStatuses.filter((value) => value !== status)
+        : [...selectedStatuses, status];
 
-    if (nextStatuses.length > 0) {
-      params.set("status", nextStatuses.join(","));
-    } else {
-      params.delete("status");
-    }
+      if (nextStatuses.length > 0) {
+        params.set("status", nextStatuses.join(","));
+      } else {
+        params.delete("status");
+      }
 
-    const query = params.toString();
-    router.replace(query ? `${pathname}?${query}` : pathname);
+      params.delete("page");
+    });
+  }
+
+  function toggleDateSort() {
+    replaceParams((params) => {
+      params.set("sort", dateSortDirection === "asc" ? "desc" : "asc");
+      params.delete("page");
+    });
+  }
+
+  function setPage(page: number) {
+    replaceParams((params) => {
+      if (page <= 1) {
+        params.delete("page");
+      } else {
+        params.set("page", String(page));
+      }
+    });
   }
 
   const filteredMissions = useMemo(() => {
@@ -120,6 +151,30 @@ export function MissionList() {
       return matchesSearch && matchesStatus;
     });
   }, [missions, debouncedSearch, selectedStatuses]);
+
+  const sortedMissions = useMemo(() => {
+    return [...filteredMissions].sort((a, b) => {
+      const difference =
+        new Date(a.startTime).getTime() - new Date(b.startTime).getTime();
+
+      return dateSortDirection === "asc" ? difference : -difference;
+    });
+  }, [filteredMissions, dateSortDirection]);
+
+  const requestedPage = Number(searchParams.get("page") ?? "1");
+  const totalPages = Math.ceil(sortedMissions.length / PAGE_SIZE);
+  const currentPage =
+    !Number.isInteger(requestedPage) || requestedPage < 1
+      ? 1
+      : totalPages < 1
+        ? 1
+        : Math.min(requestedPage, totalPages);
+
+  const startIndex = (currentPage - 1) * PAGE_SIZE;
+  const paginatedMissions = sortedMissions.slice(
+    startIndex,
+    startIndex + PAGE_SIZE,
+  );
 
   if (isLoading) {
     return <p>Loading missions...</p>;
@@ -174,7 +229,44 @@ export function MissionList() {
       {filteredMissions.length === 0 ? (
         <p>No missions match your search.</p>
       ) : (
-        <MissionTable missions={filteredMissions} />
+        <>
+          <MissionTable
+            missions={paginatedMissions}
+            dateSortDirection={dateSortDirection}
+            onToggleDateSort={toggleDateSort}
+          />
+
+          <nav
+            aria-label="Mission pagination"
+            className="flex items-center gap-3"
+          >
+            <button
+              type="button"
+              disabled={currentPage === 1}
+              onClick={() => {
+                setPage(currentPage - 1);
+              }}
+              className="rounded-lg border px-3 py-2 text-sm font-medium disabled:opacity-50"
+            >
+              Previous
+            </button>
+
+            <span>
+              Page {currentPage} of {totalPages}
+            </span>
+
+            <button
+              type="button"
+              disabled={currentPage >= totalPages}
+              onClick={() => {
+                setPage(currentPage + 1);
+              }}
+              className="rounded-lg border px-3 py-2 text-sm font-medium disabled:opacity-50"
+            >
+              Next
+            </button>
+          </nav>
+        </>
       )}
     </div>
   );

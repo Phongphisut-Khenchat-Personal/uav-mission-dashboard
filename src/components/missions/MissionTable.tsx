@@ -1,15 +1,16 @@
 "use client";
 
-import { useMemo, useState } from "react";
 import Link from "next/link";
 import { MissionStatusBadge } from "@/components/missions/MissionStatusBadge";
 import type { Mission } from "@/types/mission";
 
+export type DateSortDirection = "asc" | "desc";
+
 interface MissionTableProps {
   missions: Mission[];
+  dateSortDirection: DateSortDirection;
+  onToggleDateSort: () => void;
 }
-
-type DateSortDirection = "asc" | "desc";
 
 function getDurationInMinutes(mission: Mission): number {
   const milliseconds =
@@ -19,36 +20,24 @@ function getDurationInMinutes(mission: Mission): number {
   return Math.round(milliseconds / 60_000);
 }
 
-export function MissionTable({ missions }: MissionTableProps) {
-  const [dateSortDirection, setDateSortDirection] =
-    useState<DateSortDirection>("desc");
-
-  const sortedMissions = useMemo(() => {
-    return [...missions].sort((a, b) => {
-      const difference =
-        new Date(a.startTime).getTime() - new Date(b.startTime).getTime();
-
-      return dateSortDirection === "asc" ? difference : -difference;
-    });
-  }, [missions, dateSortDirection]);
-
-  function toggleDateSort() {
-    setDateSortDirection((current) => (current === "asc" ? "desc" : "asc"));
-  }
-
+export function MissionTable({
+  missions,
+  dateSortDirection,
+  onToggleDateSort,
+}: MissionTableProps) {
   return (
     <>
       <div className="grid gap-3 md:hidden">
         <button
           type="button"
-          onClick={toggleDateSort}
+          onClick={onToggleDateSort}
           className="justify-self-start rounded-lg border px-3 py-2 text-sm font-medium"
         >
           Flight date:{" "}
           {dateSortDirection === "asc" ? "Oldest first" : "Newest first"}
         </button>
 
-        {sortedMissions.map((mission) => (
+        {missions.map((mission) => (
           <article key={mission.id} className="rounded-xl border p-4">
             <header className="flex items-start justify-between gap-3">
               <div>
@@ -103,7 +92,7 @@ export function MissionTable({ missions }: MissionTableProps) {
               >
                 <button
                   type="button"
-                  onClick={toggleDateSort}
+                  onClick={onToggleDateSort}
                   className="inline-flex items-center gap-2 rounded focus-visible:outline-2 focus-visible:outline-offset-2"
                 >
                   Flight date
@@ -125,7 +114,7 @@ export function MissionTable({ missions }: MissionTableProps) {
           </thead>
 
           <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800">
-            {sortedMissions.map((mission) => (
+            {missions.map((mission) => (
               <tr key={mission.id}>
                 <td className="px-4 py-3">
                   <p className="font-medium">{mission.code}</p>
