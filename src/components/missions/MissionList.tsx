@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { MissionTable } from "@/components/missions/MissionTable";
 import type { Mission } from "@/types/mission";
 
 interface MissionsResponse {
@@ -49,13 +50,5 @@ export function MissionList() {
     return <p>No missions available.</p>;
   }
 
-  return (
-    <ul>
-      {missions.map((mission) => (
-        <li key={mission.id}>
-          {mission.code} — {mission.name}
-        </li>
-      ))}
-    </ul>
-  );
+  return <MissionTable missions={missions} />;
 }
