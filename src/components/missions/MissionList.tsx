@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { MissionTable } from "@/components/missions/MissionTable";
+import { MissionListSkeleton } from "@/components/missions/MissionListSkeleton";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import type { Mission, MissionStatus } from "@/types/mission";
 
@@ -49,29 +50,34 @@ export function MissionList() {
   const dateSortDirection =
     searchParams.get("sort") === "asc" ? "asc" : "desc";
 
-  useEffect(() => {
-    async function loadMissions() {
-      try {
-        const response = await fetch("/api/missions");
+  const loadMissions = useCallback(async () => {
+    try {
+      const response = await fetch("/api/missions");
 
-        if (!response.ok) {
-          const payload = (await response.json()) as { message?: string };
-          throw new Error(payload.message ?? "Unable to load missions");
-        }
-
-        const payload = (await response.json()) as MissionsResponse;
-        setMissions(payload.data);
-      } catch (caught) {
-        setError(
-          caught instanceof Error ? caught.message : "Unable to load missions",
-        );
-      } finally {
-        setIsLoading(false);
+      if (!response.ok) {
+        const payload = (await response.json()) as { message?: string };
+        throw new Error(payload.message ?? "Unable to load missions");
       }
+
+      const payload = (await response.json()) as MissionsResponse;
+      setMissions(payload.data);
+      setError(null);
+    } catch (caught) {
+      setError(
+        caught instanceof Error ? caught.message : "Unable to load missions",
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    async function loadOnMount() {
+      await loadMissions();
     }
 
-    void loadMissions();
-  }, []);
+    void loadOnMount();
+  }, [loadMissions]);
 
   const replaceParams = useCallback(
     (mutate: (params: URLSearchParams) => void) => {
@@ -135,6 +141,15 @@ export function MissionList() {
     });
   }
 
+  function clearFilters() {
+    setSearchInput("");
+    replaceParams((params) => {
+      params.delete("q");
+      params.delete("status");
+      params.delete("page");
+    });
+  }
+
   const filteredMissions = useMemo(() => {
     const normalizedQuery = debouncedSearch.trim().toLowerCase();
 
@@ -177,19 +192,34 @@ export function MissionList() {
   );
 
   if (isLoading) {
-    return <p>Loading missions...</p>;
+    return <MissionListSkeleton />;
   }
 
   if (error) {
-    return <p>{error}</p>;
+    return (
+      <div className="flex flex-col items-start gap-3">
+        <p>{error}</p>
+        <button
+          type="button"
+          onClick={() => {
+            setIsLoading(true);
+            setError(null);
+            void loadMissions();
+          }}
+          className="rounded-lg border px-3 py-2 text-sm font-medium"
+        >
+          Retry
+        </button>
+      </div>
+    );
   }
 
   if (missions.length === 0) {
-    return <p>No missions available.</p>;
+    return <p>No missions are available. Create your first mission.</p>;
   }
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex min-w-0 flex-col gap-4">
       <div className="flex flex-col gap-2">
         <label htmlFor="mission-search" className="font-medium">
           Search missions
@@ -227,7 +257,16 @@ export function MissionList() {
       </fieldset>
 
       {filteredMissions.length === 0 ? (
-        <p>No missions match your search.</p>
+        <div className="flex flex-col items-start gap-3">
+          <p>No missions match the selected filters.</p>
+          <button
+            type="button"
+            onClick={clearFilters}
+            className="rounded-lg border px-3 py-2 text-sm font-medium"
+          >
+            Clear filters
+          </button>
+        </div>
       ) : (
         <>
           <MissionTable

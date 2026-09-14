@@ -27,7 +27,7 @@ export function MissionTable({
 }: MissionTableProps) {
   return (
     <>
-      <div className="grid gap-3 md:hidden">
+      <div className="grid min-w-0 gap-3 md:hidden">
         <button
           type="button"
           onClick={onToggleDateSort}
@@ -38,7 +38,10 @@ export function MissionTable({
         </button>
 
         {missions.map((mission) => (
-          <article key={mission.id} className="rounded-xl border p-4">
+          <article
+            key={mission.id}
+            className="min-w-0 overflow-hidden rounded-xl border p-4"
+          >
             <header className="flex items-start justify-between gap-3">
               <div>
                 <p className="font-medium">{mission.code}</p>
@@ -73,8 +76,8 @@ export function MissionTable({
         ))}
       </div>
 
-      <div className="hidden max-h-[32rem] overflow-auto rounded-xl border border-zinc-200 md:block dark:border-zinc-800">
-        <table className="w-full border-collapse text-left text-sm">
+      <div className="hidden max-h-[32rem] min-w-0 overflow-x-hidden overflow-y-auto rounded-xl border border-zinc-200 md:block dark:border-zinc-800">
+        <table className="w-full table-fixed border-collapse text-left text-sm">
           <thead className="sticky top-0 z-10 bg-zinc-100 dark:bg-zinc-900">
             <tr>
               <th scope="col" className="px-4 py-3 font-semibold">
@@ -116,12 +119,12 @@ export function MissionTable({
           <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800">
             {missions.map((mission) => (
               <tr key={mission.id}>
-                <td className="px-4 py-3">
+                <td className="px-4 py-3 break-words">
                   <p className="font-medium">{mission.code}</p>
                   <p>{mission.name}</p>
                 </td>
-                <td className="px-4 py-3">{mission.droneName}</td>
-                <td className="px-4 py-3">
+                <td className="px-4 py-3 break-words">{mission.droneName}</td>
+                <td className="px-4 py-3 break-words">
                   {new Date(mission.startTime).toLocaleString()}
                 </td>
                 <td className="px-4 py-3">
