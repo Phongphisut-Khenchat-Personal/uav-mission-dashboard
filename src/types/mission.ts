@@ -32,3 +32,8 @@ export interface Mission {
   waypoints: Waypoint[];
   telemetryHistory: TelemetryPoint[];
 }
+export interface Drone {
+    id: string;
+    name: string;
+    model: string;
+  }
