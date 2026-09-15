@@ -113,6 +113,8 @@ export default function MissionDetailPage() {
     );
   }
 
+  const latestTelemetry = mission.telemetryHistory.at(-1);
+
   return (
     <main className="mx-auto flex w-full min-w-0 max-w-5xl flex-col gap-6 overflow-x-hidden px-6 py-10">
       <div className="flex flex-wrap gap-4">
@@ -166,8 +168,8 @@ export default function MissionDetailPage() {
         </p>
       </section>
 
-      {mission.status === "in-progress" && mission.telemetryHistory.at(-1) ? (
-        <TelemetryPanel initialTelemetry={mission.telemetryHistory.at(-1)} />
+      {mission.status === "in-progress" && latestTelemetry ? (
+        <TelemetryPanel initialTelemetry={latestTelemetry} />
       ) : null}
 
       <section>
