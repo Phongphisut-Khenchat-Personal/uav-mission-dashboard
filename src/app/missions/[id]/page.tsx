@@ -166,8 +166,8 @@ export default function MissionDetailPage() {
         </p>
       </section>
 
-      {mission.status === "in-progress" ? (
-        <TelemetryPanel telemetryHistory={mission.telemetryHistory} />
+      {mission.status === "in-progress" && mission.telemetryHistory.at(-1) ? (
+        <TelemetryPanel initialTelemetry={mission.telemetryHistory.at(-1)} />
       ) : null}
 
       <section>
