@@ -1,36 +1,79 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# UAV Mission Dashboard
 
-## Getting Started
+A mock front-end dashboard for reviewing UAV missions. It lists 40 sample flights, shows mission detail with waypoints and battery history, simulates live telemetry for in-progress flights, and provides create/edit forms. Data comes from a delayed mock API and is not stored on a server.
 
-First, run the development server:
+## Features
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+- Mission list with search, filters, sorting, and pagination
+- Mission details and waypoints
+- Battery chart
+- Simulated real-time telemetry
+- Create and edit mission forms
+- Responsive design
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Screenshots
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Mission list
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Search, status filters, sortable flight date, and pagination.
 
-## Learn More
+![Mission list](docs/screenshots/mission-list.png)
 
-To learn more about Next.js, take a look at the following resources:
+### Mission details
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Notes, battery chart, and waypoints.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+![Mission details](docs/screenshots/mission-detail.png)
 
-## Deploy on Vercel
+### Create and edit form
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Shared form with validation, notes counter, and dynamic waypoints.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+![Create and edit mission form](docs/screenshots/mission-form.png)
+
+### Responsive layout
+
+On small screens the list switches from a table to cards.
+
+![Responsive mission list on a small screen](docs/screenshots/responsive.png)
+
+## Requirements
+
+- Node.js 20.9 or later
+- npm
+
+## Installation
+
+1. Clone this repository
+2. Run `npm install`
+3. Run `npm run dev`
+4. Open [http://localhost:3000/missions](http://localhost:3000/missions)
+
+## Available Scripts
+
+- `npm run dev` — start the Next.js development server
+- `npm run lint` — run ESLint
+- `npm run build` — create a production build
+- `npm run start` — serve the production build
+
+## Mock API
+
+Routes live under `src/app/api/missions` and read from `src/data/missions.ts`. There is no database.
+
+**`GET /api/missions`**
+
+- Waits 500 ms, then returns `{ data, total }` for all 40 missions.
+- Add `?error=true` to simulate a failure: HTTP 500 with `{ message: "Unable to load missions" }`.
+
+**`GET /api/missions/[id]`**
+
+- Waits 500 ms, then returns `{ data }` for that mission.
+- Unknown ids return HTTP 404 with `{ message: "Mission not found" }`.
+
+The list page uses the collection endpoint. Detail and edit pages use the `[id]` endpoint. Search, status filters, sort, and pagination run in the browser after the full list is loaded.
+
+## Known Limitations
+
+Create and edit are front-end only. Save validates the form, waits 700 ms, and shows a success message. New or changed missions are not written to the mock data, so a refresh returns the original 40 missions.
+
+Live telemetry exists only on in-progress missions. It updates in the browser every 1.5 seconds and is discarded when you leave the detail page.
